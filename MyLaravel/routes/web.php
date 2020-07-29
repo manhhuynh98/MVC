@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\MyController;
+use Illuminate\Http\Client\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
@@ -122,6 +125,163 @@ Route::get('doiten', function () {
     Schema::rename('users', 'theloai');
     echo "ok";
 });
+
+// query builder
+
+Route::get('qb/where', function () {
+    $data = DB::table('users')->where('id','=',9)->get();
+    //var_dump($data);
+    foreach ($data as $row) {
+        foreach ($row as $key => $value) {
+            echo $key.":".$value."<br>";
+        }
+        echo "<hr>";
+    }
+});
+
+//select * from users where id = 9
+
+Route::get('qb/get', function () {
+    $data = DB::table('users')->get();
+    //var_dump($data);
+    foreach ($data as $row) {
+        foreach ($row as $key => $value) {
+            echo $key.":".$value."<br>";
+        }
+        echo "<hr>";
+    }
+});
+
+//select id name, email
+
+Route::get('qb/select', function () {
+    $data = DB::table('users')->select(['id','name','email'])->where('id',9)->get();
+    foreach ($data as $row) {
+        foreach ($row as $key => $value) {
+            echo $key.":".$value."<br>";
+        }
+        echo "<hr>";
+    }
+});
+
+//select name as hoten from....
+Route::get('qb/raw', function () {
+    $data = DB::table('users')->select(DB::raw('id,name as hoten,email'))->where('id',9)->get();
+    foreach ($data as $row) {
+        foreach ($row as $key => $value) {
+            echo $key.":".$value."<br>";
+        }
+        echo "<hr>";
+    }
+});
+
+Route::get('qb/orderBy', function () {
+    $data = DB::table('users')->select(DB::raw('id,name as hoten,email'))->orderByDesc('id')->skip(1)->take(5)->get();
+    foreach ($data as $row) {
+        foreach ($row as $key => $value) {
+            echo $key.":".$value."<br>";
+        }
+        echo "<hr>";
+    }
+});
+
+Route::get('qb/deleteAll', function () {
+    DB::table('users')->truncate();
+    echo "da xoa";
+
+});
+
+//model
+Route::get('model/save', function () {
+    $user = new App\User();
+    $user->name = "mai";
+    $user->email= "mia@gmail.com";
+    $user->password = "matkhau";
+
+    $user->save();
+    echo "da save";
+});
+
+Route::get('model/view', function () {
+    $user = App\User::find(2);
+    echo $user->name;
+});
+
+Route::get('model/sanpham/save/{ten}', function ($ten) {
+    $sanpham = new App\SanPham();
+    $sanpham->ten = $ten;
+    $sanpham->soluong = 100;
+    $sanpham->save();
+    echo " da save ".$ten;
+});
+
+Route::get('model/sanpham/all', function () {
+    $sanpham = App\SanPham::all()->toJson();
+    echo $sanpham;
+});
+
+Route::get('taocot', function () {
+    Schema::table('sanpham', function ($table) {
+        $table->integer('id_loaisanpham')->unsigned();
+    });
+});
+
+Route::get('lienket', function () {
+    $data = App\SanPham::find(2)->loaisanpham->toArray();
+    var_dump($data);
+});
+
+Route::get('diem', function () {
+    echo "Bạn đã có điểm";
+})->middleware('MyMiddle')->name('diem');
+
+Route::get('loi', function () {
+    echo "Bạn chưa có điểm";
+})->name('loi');
+
+Route::get('nhapdiem', function () {
+    return view('nhapdiem');
+})->name('nhapdiem');
+
+//auth
+
+Route::get('dangnhap', function () {
+    return view('dangnhap');
+});
+
+Route::get('thanhcong', function () {
+    return view('thanhcong');
+});
+
+Route::post('login', 'AuthController@login')->name('login');
+
+Route::get('logout', 'AuthController@logout');
+
+
+Route::group(['middleware' => ['web']], function () {
+    //sesion
+    Route::get('Session', function () {
+        session(['KhoaHoc'=>'Laravel']);
+        session(['laptrinh'=>'php']);
+        //echo "đã đặt session <br>";
+
+        session()->flash('mess','Hello');
+        //session()->flush();
+        //session()->forget('KhoaHoc');
+        echo session('mess');
+        if (session()->has('KhoaHoc')) {
+            echo "co khoa hoc";
+        }else{
+            echo "k có khóa học";
+        }
+    });
+
+    Route::get('Session/flash', function () {
+        echo session('mess');
+    });
+});
+
+Route::get('tin','TinController@index');
 
 /*
 |--------------------------------------------------------------------------
